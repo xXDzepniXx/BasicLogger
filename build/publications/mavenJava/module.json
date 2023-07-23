@@ -1,0 +1,85 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "org.example.fuckoffgriefers",
+    "module": "FuckOffGriefingCunts",
+    "version": "1.0",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.1.1"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "FuckOffGriefingCunts-1.0.jar",
+          "url": "FuckOffGriefingCunts-1.0.jar",
+          "size": 9761,
+          "sha512": "58f9cefbe438a351829388891fb5f18a771f36e70807b08a72724adc15730548b46d95a49cbf6fc45185eb7beda84ec137a9584c6150ead90ee88903b0d607ab",
+          "sha256": "aff474c8ca9b1828d64369d6322f9cb8ca51984c13877e379fb7a958dd32f988",
+          "sha1": "a1a81558e348387762f153f2bb3bbb63659d651f",
+          "md5": "41a4589a8ef56d18238337b1815a0534"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "net.fabricmc",
+          "module": "fabric-loader",
+          "version": {
+            "requires": "0.14.21"
+          }
+        },
+        {
+          "group": "net.fabricmc.fabric-api",
+          "module": "fabric-api",
+          "version": {
+            "requires": "0.86.0+1.20.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "FuckOffGriefingCunts-1.0.jar",
+          "url": "FuckOffGriefingCunts-1.0.jar",
+          "size": 9761,
+          "sha512": "58f9cefbe438a351829388891fb5f18a771f36e70807b08a72724adc15730548b46d95a49cbf6fc45185eb7beda84ec137a9584c6150ead90ee88903b0d607ab",
+          "sha256": "aff474c8ca9b1828d64369d6322f9cb8ca51984c13877e379fb7a958dd32f988",
+          "sha1": "a1a81558e348387762f153f2bb3bbb63659d651f",
+          "md5": "41a4589a8ef56d18238337b1815a0534"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      }
+    }
+  ]
+}
