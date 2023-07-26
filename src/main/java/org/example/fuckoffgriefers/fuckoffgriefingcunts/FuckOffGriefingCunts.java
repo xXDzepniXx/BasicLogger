@@ -18,10 +18,10 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
     @Override
     public void onInitialize() {
         String currentDir = System.getProperty("user.dir");
-        Path path = Paths.get(currentDir, "GriefingCuntsLog.log");
+        Path path = Paths.get(currentDir, "GriefingCuntsLogs");
         if (!Files.exists(path)) {
             try {
-                Files.createFile(path);
+                Files.createDirectories(path);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -38,7 +38,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                 String formattedTime = currentTime.format(timeFormatter);
                 String stringToAppend = player.getEntityName() + " placed "+ playerItemInHand.toString().toUpperCase() + " at " + hitResult.getBlockPos() + " " + formattedTime + "\n";
-                appendToFile call = new appendToFile(stringToAppend);
+                playerFileNameOrganizer playerOrganizer = new playerFileNameOrganizer(player.getEntityName(), stringToAppend);
                 // ^^^ does this upset you
                 System.out.println(stringToAppend);
             }
