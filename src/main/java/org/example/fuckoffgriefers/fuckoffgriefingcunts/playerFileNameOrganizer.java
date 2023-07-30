@@ -7,8 +7,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 public class playerFileNameOrganizer {
-    public String currentDir = System.getProperty("user.dir");
-    public String mainFolderName = "GriefingCuntsLogs";
+    public static final String currentDir = System.getProperty("user.dir");
+    public static final String mainFolderName = "GriefingCuntsLogs";
     public playerFileNameOrganizer(String playerName, String textToAppend) {
         Path folderPath = Paths.get(currentDir, mainFolderName, playerName);
         Path filePath = Paths.get(currentDir, mainFolderName, playerName, playerName + ".log");

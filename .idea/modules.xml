@@ -5,6 +5,9 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/FuckOffGriefingCunts.client.iml" filepath="$PROJECT_DIR$/.idea/modules/FuckOffGriefingCunts.client.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/FuckOffGriefingCunts.main.iml" filepath="$PROJECT_DIR$/.idea/modules/FuckOffGriefingCunts.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/FuckOffGriefingCunts.test.iml" filepath="$PROJECT_DIR$/.idea/modules/FuckOffGriefingCunts.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.example.fuckoffgriefers.FuckOffGriefingCunts.client.iml" filepath="$PROJECT_DIR$/.idea/modules/org.example.fuckoffgriefers.FuckOffGriefingCunts.client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.example.fuckoffgriefers.FuckOffGriefingCunts.main.iml" filepath="$PROJECT_DIR$/.idea/modules/org.example.fuckoffgriefers.FuckOffGriefingCunts.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/org.example.fuckoffgriefers.FuckOffGriefingCunts.test.iml" filepath="$PROJECT_DIR$/.idea/modules/org.example.fuckoffgriefers.FuckOffGriefingCunts.test.iml" />
     </modules>
   </component>
 </project>

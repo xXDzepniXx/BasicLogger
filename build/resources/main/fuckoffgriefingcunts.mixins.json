@@ -4,13 +4,12 @@
   "package": "org.example.fuckoffgriefers.fuckoffgriefingcunts.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-
   ],
   "client": [
   ],
-
   "server": [
-
+    "chestOnPlacedOwnerAdd",
+    "chestOnReadOnWriteEdit"
   ],
   "injectors": {
     "defaultRequire": 1

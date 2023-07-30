@@ -1,2 +1,1 @@
 v1	named	intermediary
-METHOD	org/example/fuckoffgriefers/fuckoffgriefingcunts/mixin/blockPlacementRecorder	()Lnet/minecraft/server/MinecraftServer;	getServer	method_8503
