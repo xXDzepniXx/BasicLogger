@@ -152,7 +152,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                         LocalDateTime currentTime = LocalDateTime.now();
                         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                         String formattedTime = currentTime.format(timeFormatter);
-                        String textToAppend = player.getEntityName() + " INTERACTED WITH " + chestOwner + "'s CHEST at " +
+                        String textToAppend = player.getEntityName() + " INTERACTED with " + chestOwner + "'s CHEST at " +
                                 blockEntity.getPos() + " " + formattedTime + "\n";
                         new playerFileNameOrganizer(player.getEntityName(), textToAppend);
                     }
@@ -202,7 +202,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 LocalDateTime currentTime = LocalDateTime.now();
                 DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                 String formattedTime = currentTime.format(timeFormatter);
-                String stringToAppend = player.getEntityName() + " PLACED " + playerItemInHand.toString().toUpperCase() + " AT " + hitResult.getBlockPos() + " " + formattedTime + "\n";
+                String stringToAppend = player.getEntityName() + " placed " + playerItemInHand.toString().toUpperCase() + " at " + hitResult.getBlockPos() + " " + formattedTime + "\n";
                 playerFileNameOrganizer playerOrganizer = new playerFileNameOrganizer(player.getEntityName(), stringToAppend);
                 // ^^^ does this upset you
                 System.out.println(stringToAppend);
