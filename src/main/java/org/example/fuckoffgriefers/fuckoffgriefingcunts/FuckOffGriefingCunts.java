@@ -1,11 +1,10 @@
 package org.example.fuckoffgriefers.fuckoffgriefingcunts;
 
-import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonObject;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
@@ -13,17 +12,15 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-import java.lang.reflect.Type;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +32,7 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 
 public class FuckOffGriefingCunts implements ModInitializer { // To make sure mod is run by Fabric
     // ownerMap is stuck in memory as long as the server is on, but will lose all data upon a restart
@@ -68,6 +66,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 json.addProperty("x", entry.getKey().getPos().getX());
                 json.addProperty("y", entry.getKey().getPos().getY());
                 json.addProperty("z", entry.getKey().getPos().getZ());
+                json.addProperty("World", entry.getKey().getWorld().getRegistryKey().getValue().toString());
                 json.addProperty("Owner", entry.getValue());
 
                 String jsonString = gson.toJson(json) + "\n";
@@ -79,36 +78,52 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
             }
         });
 
-        ServerLifecycleEvents.SERVER_STARTING.register(server -> {
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             Gson gson = new Gson();
 
             try (BufferedReader reader = new BufferedReader(new FileReader(String.valueOf(ownerMapPath)))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    Map<String, Object> myMap = gson.fromJson(line, Map.class);
-                    int x = 0;
-                    int y = 0;
-                    int z = 0;
+                    Map<String, Object> tempOwnerMap = gson.fromJson(line, Map.class);
+                    double x = 0;
+                    double y = 0;
+                    double z = 0;
+                    RegistryKey<World> worldKey = null;
                     String owner = null;
 
-                    for (Map.Entry<String, Object> entry : myMap.entrySet()) {
+                    for (Map.Entry<String, Object> entry : tempOwnerMap.entrySet()) {
                         if (entry.getKey().equals("x")) {
-                            x = Integer.getInteger((String) entry.getValue());
+                            x = (double) entry.getValue();
                         } else if (entry.getKey().equals("y")) {
-                            y = Integer.getInteger((String) entry.getValue());
+                            y = (double) entry.getValue();
                         } else if (entry.getKey().equals("z")) {
-                            z = Integer.getInteger((String) entry.getValue());
+                            z = (double) entry.getValue();
                         } else if (entry.getKey().equals("Owner")) {
                             owner = (String) entry.getValue();
+                        } else if (entry.getKey().equals("World")) {
+                            worldKey = RegistryKey.of(RegistryKeys.WORLD, new Identifier((String) entry.getValue()));
                         }
                     }
 
-                    BlockPos pos = new BlockPos(x, y, z);
-                    BlockEntity chestBlock = server.getOverworld().getBlockEntity(pos);
+                    BlockPos pos = new BlockPos((int)x, (int)y, (int)z);
+                    Chunk chunk = server.getWorld(worldKey).getChunk(pos);
+                    BlockEntity chestBlock = chunk.getBlockEntity(pos);
                     setOwner(chestBlock, owner);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+
+            try {
+                new FileOutputStream(String.valueOf(ownerMapPath)).close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
+            if (blockEntity instanceof ChestBlockEntity) {
+                deleteOwner(blockEntity);
             }
         });
 
@@ -182,5 +197,9 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
 
     public static String getOwner(BlockEntity chestEntity) {
         return ownerMap.get(chestEntity);
+    }
+
+    public static void deleteOwner(BlockEntity chestEntity) {
+        ownerMap.remove(chestEntity);
     }
 }
