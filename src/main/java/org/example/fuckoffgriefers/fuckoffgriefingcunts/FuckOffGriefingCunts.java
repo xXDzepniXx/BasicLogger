@@ -122,8 +122,18 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
         });
 
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
+            String chestOwner = getOwner(blockEntity);
             if (blockEntity instanceof ChestBlockEntity) {
-                deleteOwner(blockEntity);
+                if (chestOwner.equals(player.getEntityName())) { // implies not null
+                    deleteOwner(blockEntity);
+                } else if (!chestOwner.equals(player.getEntityName())) { // since this implies it's not null
+                    LocalDateTime currentTime = LocalDateTime.now();
+                    DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    String formattedTime = currentTime.format(timeFormatter);
+                    String textToAppend = player.getEntityName() + " BROKE " + chestOwner + "'s CHEST at " +
+                            blockEntity.getPos() + " " + formattedTime + "\n";
+                    new playerFileNameOrganizer(player.getEntityName(), textToAppend);
+                }
             }
         });
 
@@ -133,10 +143,20 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
             if (blockState.getBlock() instanceof ChestBlock) { // make sure it is a chest
                 BlockEntity blockEntity = world.getBlockEntity(hitResult.getBlockPos());
                 if (blockEntity instanceof ChestBlockEntity) { // because it could be a ChestMinecartEntity
-                    ChestBlockEntity chest = (ChestBlockEntity) blockEntity;
-                    ChestType chestType = blockEntity.getCachedState().get(ChestBlock.CHEST_TYPE);
-                    NbtCompound chestNbtData = blockEntity.createNbt();
-                    String chestOwner = chestNbtData.getString("Owner");
+                    //ChestBlockEntity chest = (ChestBlockEntity) blockEntity;
+                    //ChestType chestType = blockEntity.getCachedState().get(ChestBlock.CHEST_TYPE);
+                    //NbtCompound chestNbtData = blockEntity.createNbt();
+                    //String chestOwner = chestNbtData.getString("Owner");
+                    String chestOwner = getOwner(blockEntity);
+                    if (!chestOwner.equals(player.getEntityName())) {
+                        LocalDateTime currentTime = LocalDateTime.now();
+                        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                        String formattedTime = currentTime.format(timeFormatter);
+                        String textToAppend = player.getEntityName() + " INTERACTED WITH " + chestOwner + "'s CHEST at " +
+                                blockEntity.getPos() + " " + formattedTime + "\n";
+                        new playerFileNameOrganizer(player.getEntityName(), textToAppend);
+                    }
+
                     /* TESTING STUFF
                     if (chestOwner != null) {
                         if (!chestOwner.equals(player.getEntityName())) {
@@ -182,7 +202,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 LocalDateTime currentTime = LocalDateTime.now();
                 DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                 String formattedTime = currentTime.format(timeFormatter);
-                String stringToAppend = player.getEntityName() + " placed "+ playerItemInHand.toString().toUpperCase() + " at " + hitResult.getBlockPos() + " " + formattedTime + "\n";
+                String stringToAppend = player.getEntityName() + " PLACED " + playerItemInHand.toString().toUpperCase() + " AT " + hitResult.getBlockPos() + " " + formattedTime + "\n";
                 playerFileNameOrganizer playerOrganizer = new playerFileNameOrganizer(player.getEntityName(), stringToAppend);
                 // ^^^ does this upset you
                 System.out.println(stringToAppend);

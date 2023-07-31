@@ -16,8 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Objects;
-
 @Environment(EnvType.SERVER)
 @Mixin(ChestBlock.class)
 public abstract class chestOnPlacedOwnerAdd { // this is for when a player places a chest
