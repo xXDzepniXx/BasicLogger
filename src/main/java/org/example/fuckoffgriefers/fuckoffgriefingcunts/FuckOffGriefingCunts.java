@@ -1,23 +1,32 @@
 package org.example.fuckoffgriefers.fuckoffgriefingcunts;
 
-import com.google.gson.JsonObject;
+import com.google.gson.*;
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
-import net.minecraft.block.enums.ChestType;
+import net.minecraft.command.CommandSource;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
 import java.io.*;
@@ -27,10 +36,13 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 
@@ -57,6 +69,29 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 e.printStackTrace();
             }
         }
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            ArrayList<String> playerNames = new ArrayList<>(10);
+
+            Gson gson = new Gson();
+            try (Reader reader = new FileReader("usercache.json")) {
+                JsonElement jsonElement = gson.fromJson(reader, JsonElement.class);
+                if (jsonElement.isJsonArray()) {
+                    jsonElement.getAsJsonArray().forEach(element -> {
+                        JsonObject playerObject = element.getAsJsonObject();
+                        playerNames.add(playerObject.get("name").getAsString());
+                    });
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            dispatcher.register(CommandManager.literal("setChestOwner")
+                    .requires(source -> source.hasPermissionLevel(2))
+                    .then(CommandManager.argument("players", StringArgumentType.string())
+                            .suggests((context, builder) -> CommandSource.suggestMatching(playerNames, builder))
+                            .executes(this::setChestOwnerForce)));
+        });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
             for (Map.Entry<BlockEntity, String> entry : ownerMap.entrySet()) {
@@ -209,6 +244,32 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
             }
             return ActionResult.PASS;
         });
+    }
+
+    public int setChestOwnerForce(CommandContext<ServerCommandSource> context) {
+        String commandInput = StringArgumentType.getString(context, "players");
+
+        ServerPlayerEntity player = context.getSource().getPlayer();
+        if (player != null) { // in case someone runs it from console for some reason
+            double maxDistance = 5.0D;
+            Vec3d vec3d = player.getPos();
+            Vec3d vec3d2 = player.getRotationVec(1.0F);
+            Vec3d vec3d3 = vec3d.add(vec3d2.x * maxDistance, vec3d2.y * maxDistance, vec3d2.z * maxDistance);
+            HitResult hitResult = player.getWorld().raycast(new RaycastContext(vec3d, vec3d3, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
+            // vec3d2, vec3d3 and hitResult stuff i found online
+
+            if (hitResult.getType() == HitResult.Type.BLOCK) {
+                BlockPos blockPos = ((BlockHitResult)hitResult).getBlockPos();
+                BlockState blockState = player.getWorld().getBlockState(blockPos);
+                Block block = blockState.getBlock();
+                BlockEntity blockEntity = player.getWorld().getBlockEntity(blockPos);
+                if (block instanceof ChestBlock && blockEntity instanceof ChestBlockEntity) { // now we know for sure it's a chest
+                    setOwner(blockEntity, commandInput);
+                }
+            }
+        }
+
+        return Command.SINGLE_SUCCESS;
     }
 
     public static void setOwner(BlockEntity chestEntity, String ownerName) {
