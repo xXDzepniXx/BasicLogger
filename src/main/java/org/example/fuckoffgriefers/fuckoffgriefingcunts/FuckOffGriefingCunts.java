@@ -262,8 +262,8 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 BlockPos blockPos = ((BlockHitResult)hitResult).getBlockPos();
                 BlockState blockState = player.getWorld().getBlockState(blockPos);
                 Block block = blockState.getBlock();
-                System.out.println(block.asItem());
                 BlockEntity blockEntity = player.getWorld().getBlockEntity(blockPos);
+
                 if (block instanceof ChestBlock && blockEntity instanceof ChestBlockEntity) { // now we know for sure it's a chest
                     setOwner(blockEntity, commandInput);
                 }
