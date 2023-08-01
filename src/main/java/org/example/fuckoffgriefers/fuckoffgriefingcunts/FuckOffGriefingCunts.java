@@ -166,6 +166,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                     String textToAppend = player.getEntityName() + " BROKE " + chestOwner + "'s CHEST at " +
                             blockEntity.getPos() + " " + formattedTime + "\n";
                     new playerFileNameOrganizer(player.getEntityName(), textToAppend);
+                    deleteOwner(blockEntity);
                 }
             }
         });
