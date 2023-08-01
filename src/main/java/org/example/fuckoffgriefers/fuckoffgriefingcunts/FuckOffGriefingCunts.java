@@ -252,7 +252,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
         ServerPlayerEntity player = context.getSource().getPlayer();
         if (player != null) { // in case someone runs it from console for some reason
             double maxDistance = 5.0D;
-            Vec3d vec3d = player.getPos();
+            Vec3d vec3d = player.getCameraPosVec(1.0F);
             Vec3d vec3d2 = player.getRotationVec(1.0F);
             Vec3d vec3d3 = vec3d.add(vec3d2.x * maxDistance, vec3d2.y * maxDistance, vec3d2.z * maxDistance);
             HitResult hitResult = player.getWorld().raycast(new RaycastContext(vec3d, vec3d3, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
@@ -262,7 +262,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 BlockPos blockPos = ((BlockHitResult)hitResult).getBlockPos();
                 BlockState blockState = player.getWorld().getBlockState(blockPos);
                 Block block = blockState.getBlock();
-
+                System.out.println(block.asItem());
                 BlockEntity blockEntity = player.getWorld().getBlockEntity(blockPos);
                 if (block instanceof ChestBlock && blockEntity instanceof ChestBlockEntity) { // now we know for sure it's a chest
                     setOwner(blockEntity, commandInput);
