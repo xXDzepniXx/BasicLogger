@@ -50,6 +50,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
     // ownerMap is stuck in memory as long as the server is on, but will lose all data upon a restart
     // BlockEntity is unique with each entry
     public static final HashMap<BlockEntity, String> ownerMap = new HashMap<>();
+    public static final ArrayList<String> playerNames = new ArrayList<>(10);
     public static final String currentDir = System.getProperty("user.dir");
     public static final Path path = Paths.get(currentDir, "GriefingCuntsLogs");
     public static final Path ownerMapPath = Paths.get(currentDir, "GriefingCuntsLogs", "GriefingCuntsOwnerMaps.json");
@@ -71,21 +72,6 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
         }
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-            ArrayList<String> playerNames = new ArrayList<>(10);
-
-            Gson gson = new Gson();
-            try (Reader reader = new FileReader("usercache.json")) {
-                JsonElement jsonElement = gson.fromJson(reader, JsonElement.class);
-                if (jsonElement.isJsonArray()) {
-                    jsonElement.getAsJsonArray().forEach(element -> {
-                        JsonObject playerObject = element.getAsJsonObject();
-                        playerNames.add(playerObject.get("name").getAsString());
-                    });
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
             dispatcher.register(CommandManager.literal("setChestOwner")
                     .requires(source -> source.hasPermissionLevel(2))
                     .then(CommandManager.argument("players", StringArgumentType.string())
@@ -115,6 +101,18 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
 
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             Gson gson = new Gson();
+
+            try (Reader reader = new FileReader("usercache.json")) {
+                JsonElement jsonElement = gson.fromJson(reader, JsonElement.class);
+                if (jsonElement.isJsonArray()) {
+                    jsonElement.getAsJsonArray().forEach(element -> {
+                        JsonObject playerObject = element.getAsJsonObject();
+                        playerNames.add(playerObject.get("name").getAsString());
+                    });
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             try (BufferedReader reader = new BufferedReader(new FileReader(String.valueOf(ownerMapPath)))) {
                 String line;
@@ -266,6 +264,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
 
                 if (block instanceof ChestBlock && blockEntity instanceof ChestBlockEntity) { // now we know for sure it's a chest
                     setOwner(blockEntity, commandInput);
+                    System.out.println("Successfully changed chest owner to " + commandInput);
                 }
             }
         }
