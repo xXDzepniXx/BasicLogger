@@ -9,10 +9,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.ChestBlock;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.command.CommandSource;
@@ -173,6 +170,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
 
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
             BlockState blockState = world.getBlockState(hitResult.getBlockPos());
+            Item playerItemInHand = player.getStackInHand(hand).getItem();
 
             if (blockState.getBlock() instanceof ChestBlock) { // make sure it is a chest
                 BlockEntity blockEntity = world.getBlockEntity(hitResult.getBlockPos());
@@ -221,8 +219,28 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                     }
                     */
                 }
-            }
+            } else if (!player.isSpectator() && // does not check if player is spectator
+                    !player.getMainHandStack().isEmpty() &&
+                    playerItemInHand == Blocks.HOPPER.asItem()) {
 
+                BlockPos hopperPos = hitResult.getBlockPos();
+                BlockPos chestPos = hopperPos.up().up();
+                BlockEntity blockEntityAbove = world.getBlockEntity(chestPos);
+
+                if (blockEntityAbove instanceof ChestBlockEntity) {
+                    if (ownerMap.containsKey(blockEntityAbove)) {
+                        if (!ownerMap.get(blockEntityAbove).equals(player.getEntityName())) {
+                            LocalDateTime currentTime = LocalDateTime.now();
+                            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                            String formattedTime = currentTime.format(timeFormatter);
+                            String stringToAppend = player.getEntityName() + " placed " +
+                                    playerItemInHand.toString().toUpperCase() + " BELOW " +
+                                    ownerMap.get(blockEntityAbove) + "'s CHEST at " + hitResult.getBlockPos() + " " + formattedTime + "\n";
+                            new playerFileNameOrganizer(player.getEntityName(), stringToAppend);
+                        }
+                    }
+                }
+            }
             return ActionResult.PASS;
         });
 
@@ -255,7 +273,6 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
             Vec3d vec3d2 = player.getRotationVec(1.0F);
             Vec3d vec3d3 = vec3d.add(vec3d2.x * maxDistance, vec3d2.y * maxDistance, vec3d2.z * maxDistance);
             HitResult hitResult = player.getWorld().raycast(new RaycastContext(vec3d, vec3d3, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
-            // vec3d2, vec3d3 and hitResult stuff i found online
 
             if (hitResult.getType() == HitResult.Type.BLOCK) {
                 BlockPos blockPos = ((BlockHitResult)hitResult).getBlockPos();
