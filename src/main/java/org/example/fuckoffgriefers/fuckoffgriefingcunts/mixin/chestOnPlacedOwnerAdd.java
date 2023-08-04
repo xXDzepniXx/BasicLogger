@@ -26,7 +26,7 @@ public abstract class chestOnPlacedOwnerAdd { // this is for when a player place
 
             if (blockEntity instanceof ChestBlockEntity) { // shouldn't be buuuut just in case
                 FuckOffGriefingCunts.setOwner(blockEntity, placer.getEntityName());
-                blockEntity.markDirty();
+                //blockEntity.markDirty();
             }
         }
     }

@@ -8,8 +8,7 @@
   "client": [
   ],
   "server": [
-    "chestOnPlacedOwnerAdd",
-    "chestOnReadOnWriteEdit"
+    "chestOnPlacedOwnerAdd"
   ],
   "injectors": {
     "defaultRequire": 1
