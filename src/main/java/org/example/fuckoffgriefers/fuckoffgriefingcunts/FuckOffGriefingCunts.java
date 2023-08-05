@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
+import net.minecraft.block.enums.ChestType;
 import net.minecraft.command.CommandSource;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
@@ -227,13 +228,20 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 BlockEntity blockEntity = player.getWorld().getBlockEntity(blockPos);
 
                 if (block instanceof ChestBlock && blockEntity instanceof ChestBlockEntity) { // now we know for sure it's a chest
+                    ChestType chestType = blockState.get(ChestBlock.CHEST_TYPE);
                     setOwner(blockEntity, commandInput);
-                    for (Direction direction : Direction.Type.HORIZONTAL) {
-                        BlockPos adjacentPos = blockPos.offset(direction);
-                        BlockEntity adjacentBlockEntity = player.getWorld().getBlockEntity(adjacentPos);
-                        if (adjacentBlockEntity instanceof ChestBlockEntity) {
-                            setOwner(adjacentBlockEntity, commandInput);
-                            break;
+                    if (chestType != ChestType.SINGLE) {
+                        for (Direction direction : Direction.Type.HORIZONTAL) {
+                            BlockPos adjacentPos = blockPos.offset(direction);
+                            BlockState adjacentBlockState = player.getWorld().getBlockState(adjacentPos);
+                            BlockEntity adjacentBlockEntity = player.getWorld().getBlockEntity(adjacentPos);
+                            if (adjacentBlockEntity instanceof ChestBlockEntity) {
+                                ChestType adjacentChestType = adjacentBlockState.get(ChestBlock.CHEST_TYPE);
+                                if (adjacentChestType == chestType.getOpposite() && adjacentChestType.getOpposite() == chestType) {
+                                    setOwner(adjacentBlockEntity, commandInput);
+                                    break;
+                                }
+                            }
                         }
                     }
                     new writeFromMemoryToJson(ownerMap, ownerMapPath);
