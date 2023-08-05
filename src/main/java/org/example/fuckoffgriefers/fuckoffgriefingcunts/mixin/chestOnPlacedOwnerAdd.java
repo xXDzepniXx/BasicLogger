@@ -11,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.example.fuckoffgriefers.fuckoffgriefingcunts.FuckOffGriefingCunts;
+import org.example.fuckoffgriefers.fuckoffgriefingcunts.writeFromMemoryToJson;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,6 +27,7 @@ public abstract class chestOnPlacedOwnerAdd { // this is for when a player place
 
             if (blockEntity instanceof ChestBlockEntity) { // shouldn't be buuuut just in case
                 FuckOffGriefingCunts.setOwner(blockEntity, placer.getEntityName());
+                new writeFromMemoryToJson(FuckOffGriefingCunts.ownerMap, FuckOffGriefingCunts.ownerMapPath);
                 //blockEntity.markDirty();
             }
         }
