@@ -222,28 +222,31 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
             HitResult hitResult = player.getWorld().raycast(new RaycastContext(vec3d, vec3d3, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.NONE, player));
 
             if (hitResult.getType() == HitResult.Type.BLOCK) {
-                BlockPos blockPos = ((BlockHitResult)hitResult).getBlockPos();
-                BlockState blockState = player.getWorld().getBlockState(blockPos);
-                Block block = blockState.getBlock();
-                BlockEntity blockEntity = player.getWorld().getBlockEntity(blockPos);
+                BlockPos currentHalf = ((BlockHitResult)hitResult).getBlockPos();
+                BlockState halfBlockState = player.getWorld().getBlockState(currentHalf);
+                Block block = halfBlockState.getBlock();
+                BlockEntity blockEntity = player.getWorld().getBlockEntity(currentHalf);
 
                 if (block instanceof ChestBlock && blockEntity instanceof ChestBlockEntity) { // now we know for sure it's a chest
-                    ChestType chestType = blockState.get(ChestBlock.CHEST_TYPE);
+                    ChestType chestType = halfBlockState.get(ChestBlock.CHEST_TYPE);
+                    Direction chestFacing = halfBlockState.get(ChestBlock.FACING);
+                    Direction directionOfOtherHalf;
                     setOwner(blockEntity, commandInput);
-                    if (chestType != ChestType.SINGLE) {
-                        for (Direction direction : Direction.Type.HORIZONTAL) {
-                            BlockPos adjacentPos = blockPos.offset(direction);
-                            BlockState adjacentBlockState = player.getWorld().getBlockState(adjacentPos);
-                            BlockEntity adjacentBlockEntity = player.getWorld().getBlockEntity(adjacentPos);
-                            if (adjacentBlockEntity instanceof ChestBlockEntity) {
-                                ChestType adjacentChestType = adjacentBlockState.get(ChestBlock.CHEST_TYPE);
-                                if (adjacentChestType == chestType.getOpposite() && adjacentChestType.getOpposite() == chestType) {
-                                    setOwner(adjacentBlockEntity, commandInput);
-                                    break;
-                                }
-                            }
+
+                    if (chestType == ChestType.LEFT) {
+                        directionOfOtherHalf = chestFacing.rotateYClockwise();
+                        BlockPos otherHalf = currentHalf.offset(directionOfOtherHalf);
+                        if (player.getWorld().getBlockEntity(otherHalf) instanceof ChestBlockEntity) {
+                            setOwner(player.getWorld().getBlockEntity(otherHalf), commandInput);
+                        }
+                    } else if (chestType == ChestType.RIGHT) {
+                        directionOfOtherHalf = chestFacing.rotateYCounterclockwise();
+                        BlockPos otherHalf = currentHalf.offset(directionOfOtherHalf);
+                        if (player.getWorld().getBlockEntity(otherHalf) instanceof ChestBlockEntity) {
+                            setOwner(player.getWorld().getBlockEntity(otherHalf), commandInput);
                         }
                     }
+
                     new writeFromMemoryToJson(ownerMap, ownerMapPath);
                     System.out.println("Successfully changed chest owner to " + commandInput);
                 }
