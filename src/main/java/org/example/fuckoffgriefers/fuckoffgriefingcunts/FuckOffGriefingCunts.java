@@ -10,12 +10,14 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.minecraft.block.*;
+import net.minecraft.block.entity.BarrelBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.command.CommandSource;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.command.CommandManager;
@@ -127,7 +129,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
         });
 
         PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
-            if (blockEntity instanceof ChestBlockEntity) {
+            if (blockEntity instanceof ChestBlockEntity || blockEntity instanceof BarrelBlockEntity) {
                 if (ownerMap.containsKey(blockEntity)) {
                     String chestOwner = getOwner(blockEntity);
                     if (chestOwner.equals(player.getEntityName())) { // implies not null
@@ -137,7 +139,10 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                         LocalDateTime currentTime = LocalDateTime.now();
                         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                         String formattedTime = currentTime.format(timeFormatter);
-                        String textToAppend = player.getEntityName() + " BROKE " + chestOwner + "'s CHEST at " +
+                        Identifier id = Registries.BLOCK_ENTITY_TYPE.getId(blockEntity.getType());
+                        String idString = id.toString().toUpperCase();
+                        String textToAppend = player.getEntityName() + " BROKE " + chestOwner + "'s " +
+                                idString + " at " +
                                 blockEntity.getPos() + " " + formattedTime + "\n";
                         new playerFileNameOrganizer(player.getEntityName(), textToAppend);
                         deleteOwner(blockEntity);
@@ -151,16 +156,17 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
             BlockState blockState = world.getBlockState(hitResult.getBlockPos());
             Item playerItemInHand = player.getStackInHand(hand).getItem();
 
-            if (blockState.getBlock() instanceof ChestBlock) { // make sure it is a chest
+            if (blockState.getBlock() instanceof ChestBlock || blockState.getBlock() instanceof BarrelBlock) { // make sure it is a chest or barrel
                 BlockEntity blockEntity = world.getBlockEntity(hitResult.getBlockPos());
-                if (blockEntity instanceof ChestBlockEntity) { // because it could be a ChestMinecartEntity
+                if (blockEntity instanceof ChestBlockEntity || blockEntity instanceof BarrelBlockEntity) { // because it could be a ChestMinecartEntity
                     if (ownerMap.containsKey(blockEntity)) {
                         String chestOwner = getOwner(blockEntity);
                         if (!chestOwner.equals(player.getEntityName())) {
                             LocalDateTime currentTime = LocalDateTime.now();
                             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                             String formattedTime = currentTime.format(timeFormatter);
-                            String textToAppend = player.getEntityName() + " INTERACTED with " + chestOwner + "'s CHEST at " +
+                            String textToAppend = player.getEntityName() + " INTERACTED with " + chestOwner + "'s "
+                                    + blockState.getBlock().asItem().toString().toUpperCase() + " at " +
                                     blockEntity.getPos() + " " + formattedTime + "\n";
                             new playerFileNameOrganizer(player.getEntityName(), textToAppend);
                         }
@@ -173,16 +179,18 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 BlockPos hopperPos = hitResult.getBlockPos();
                 BlockPos chestPos = hopperPos.up().up();
                 BlockEntity blockEntityAbove = world.getBlockEntity(chestPos);
+                BlockState blockStateAbove = world.getBlockState(chestPos);
 
-                if (blockEntityAbove instanceof ChestBlockEntity) {
+                if (blockEntityAbove instanceof ChestBlockEntity || blockEntityAbove instanceof BarrelBlockEntity) {
                     if (ownerMap.containsKey(blockEntityAbove)) {
                         if (!ownerMap.get(blockEntityAbove).equals(player.getEntityName())) {
                             LocalDateTime currentTime = LocalDateTime.now();
                             DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                             String formattedTime = currentTime.format(timeFormatter);
+                            String blockType = blockStateAbove.getBlock().asItem().toString().toUpperCase();
                             String stringToAppend = player.getEntityName() + " placed " +
                                     playerItemInHand.toString().toUpperCase() + " BELOW " +
-                                    ownerMap.get(blockEntityAbove) + "'s CHEST at " + hitResult.getBlockPos() + " " + formattedTime + "\n";
+                                    ownerMap.get(blockEntityAbove) + "'s " + blockType + " at " + blockEntityAbove.getPos() + " " + formattedTime + "\n";
                             new playerFileNameOrganizer(player.getEntityName(), stringToAppend);
                         }
                     }
@@ -246,12 +254,14 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                             setOwner(player.getWorld().getBlockEntity(otherHalf), commandInput);
                         }
                     }
-
-                    new writeFromMemoryToJson(ownerMap, ownerMapPath);
-                    System.out.println("Successfully changed chest owner to " + commandInput);
+                } else if (block instanceof BarrelBlock && blockEntity instanceof BarrelBlockEntity) {
+                    setOwner(blockEntity, commandInput);
                 }
             }
         }
+
+        new writeFromMemoryToJson(ownerMap, ownerMapPath);
+        System.out.println("Successfully changed chest owner to " + commandInput);
 
         return Command.SINGLE_SUCCESS;
     }
