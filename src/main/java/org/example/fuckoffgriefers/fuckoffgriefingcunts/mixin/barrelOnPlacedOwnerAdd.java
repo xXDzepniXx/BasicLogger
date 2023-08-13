@@ -26,8 +26,8 @@ public abstract class barrelOnPlacedOwnerAdd { // this is for when a player plac
             BlockEntity blockEntity = world.getBlockEntity(pos);
 
             if (blockEntity instanceof BarrelBlockEntity) { // shouldn't be buuuut just in case
-                FuckOffGriefingCunts.setOwner(blockEntity, placer.getEntityName());
-                new writeFromMemoryToJson(FuckOffGriefingCunts.ownerMap, FuckOffGriefingCunts.ownerMapPath);
+                FuckOffGriefingCunts.jsonOwnerMap.setOwner(blockEntity, placer.getEntityName());
+                new writeFromMemoryToJson(FuckOffGriefingCunts.jsonOwnerMap, FuckOffGriefingCunts.ownerMapPath);
                 //blockEntity.markDirty();
             }
         }

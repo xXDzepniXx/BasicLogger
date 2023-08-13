@@ -12,19 +12,21 @@ import java.nio.file.Path;
 import java.util.Map;
 
 public class writeFromMemoryToJson {
-    public writeFromMemoryToJson(Map<BlockEntity, String> ownerMap, Path ownerMapPath) {
+    public writeFromMemoryToJson(jsonHashMap jsonHashMap, Path ownerMapPath) {
         Gson gson = new Gson();
         JsonObject json = new JsonObject();
         StringBuilder jsonString = new StringBuilder();
-        for (Map.Entry<BlockEntity, String> entry : ownerMap.entrySet()) {
-            json.addProperty("x", entry.getKey().getPos().getX());
-            json.addProperty("y", entry.getKey().getPos().getY());
-            json.addProperty("z", entry.getKey().getPos().getZ());
-            json.addProperty("World", entry.getKey().getWorld().getRegistryKey().getValue().toString());
-            json.addProperty("Owner", entry.getValue());
+        for (Map.Entry<BlockEntity, String> entry : jsonHashMap.ownerMap.entrySet()) {
+            if (entry != null && entry.getKey() != null && entry.getValue() != null) {
+                json.addProperty("x", entry.getKey().getPos().getX());
+                json.addProperty("y", entry.getKey().getPos().getY());
+                json.addProperty("z", entry.getKey().getPos().getZ());
+                json.addProperty("World", entry.getKey().getWorld().getRegistryKey().getValue().toString());
+                json.addProperty("Owner", entry.getValue());
 
-            String stringToAppend = gson.toJson(json) + "\n";
-            jsonString.append(stringToAppend);
+                String stringToAppend = gson.toJson(json) + "\n";
+                jsonString.append(stringToAppend);
+            }
         }
 
         OutputStream os = null;
