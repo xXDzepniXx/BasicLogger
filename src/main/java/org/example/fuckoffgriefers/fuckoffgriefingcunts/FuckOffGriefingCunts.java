@@ -17,12 +17,14 @@ import net.minecraft.block.enums.ChestType;
 import net.minecraft.command.CommandSource;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
@@ -48,7 +50,6 @@ import net.minecraft.world.chunk.Chunk;
 public class FuckOffGriefingCunts implements ModInitializer { // To make sure mod is run by Fabric
     // ownerMap is stuck in memory as long as the server is on, but will lose all data upon a restart
     // BlockEntity is unique with each entry
-    //public static final HashMap<BlockEntity, String> ownerMap = new HashMap<>();
     public static final jsonHashMap jsonOwnerMap = new jsonHashMap();
     public static final ArrayList<String> playerNames = new ArrayList<>(10);
     public static final String currentDir = System.getProperty("user.dir");

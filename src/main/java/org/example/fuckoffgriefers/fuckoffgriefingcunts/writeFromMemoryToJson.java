@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.Map;
 
 public class writeFromMemoryToJson {
@@ -16,8 +17,13 @@ public class writeFromMemoryToJson {
         Gson gson = new Gson();
         JsonObject json = new JsonObject();
         StringBuilder jsonString = new StringBuilder();
-        for (Map.Entry<BlockEntity, String> entry : jsonHashMap.ownerMap.entrySet()) {
-            if (entry != null && entry.getKey() != null && entry.getValue() != null) {
+
+        Iterator<Map.Entry<BlockEntity, String>> iterator = jsonHashMap.ownerMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<BlockEntity, String> entry = iterator.next();
+            if (entry.getKey() == null || entry.getValue() == null) {
+                iterator.remove(); // in case of a reference that is null, taking up memory
+            } else {
                 json.addProperty("x", entry.getKey().getPos().getX());
                 json.addProperty("y", entry.getKey().getPos().getY());
                 json.addProperty("z", entry.getKey().getPos().getZ());
