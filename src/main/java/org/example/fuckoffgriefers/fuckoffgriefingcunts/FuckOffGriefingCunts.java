@@ -15,14 +15,19 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.command.CommandSource;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
@@ -35,7 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.JsonObject;
@@ -49,7 +54,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
     // ownerMap is stuck in memory as long as the server is on, but will lose all data upon a restart
     // BlockEntity is unique with each entry
     public static final jsonHashMap jsonOwnerMap = new jsonHashMap();
-    public static final ArrayList<String> playerNames = new ArrayList<>(10);
+    public static final HashMap<String, String> playerNameAndUUIDs = new HashMap<>(10);
     public static final String currentDir = System.getProperty("user.dir");
     public static final Path path = Paths.get(currentDir, "GriefingCuntsLogs");
     public static final Path ownerMapPath = Paths.get(currentDir, "GriefingCuntsLogs", "GriefingCuntsOwnerMaps.json");
@@ -74,8 +79,18 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
             dispatcher.register(CommandManager.literal("setChestOwner")
                     .requires(source -> source.hasPermissionLevel(2))
                     .then(CommandManager.argument("players", StringArgumentType.string())
-                            .suggests((context, builder) -> CommandSource.suggestMatching(playerNames, builder))
+                            .suggests((context, builder) -> CommandSource.suggestMatching(playerNameAndUUIDs.keySet(), builder))
                             .executes(this::setChestOwnerForce)));
+        });
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            dispatcher.register(CommandManager.literal("checkInv")
+                    .requires(source -> source.hasPermissionLevel(2))
+                    .then(CommandManager.argument("player", StringArgumentType.string())
+                            .suggests((context, builder) -> CommandSource.suggestMatching(playerNameAndUUIDs.keySet(), builder)) // Suggests online player names
+                            .then(CommandManager.argument("type", StringArgumentType.string())
+                                    .suggests((context, builder) -> CommandSource.suggestMatching("ENDERCHEST".lines(), builder))
+                                    .executes(this::checkChestInv))));
         });
 
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> new writeFromMemoryToJson(jsonOwnerMap, ownerMapPath));
@@ -88,7 +103,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                 if (jsonElement.isJsonArray()) {
                     jsonElement.getAsJsonArray().forEach(element -> {
                         JsonObject playerObject = element.getAsJsonObject();
-                        playerNames.add(playerObject.get("name").getAsString());
+                        playerNameAndUUIDs.put(playerObject.get("name").getAsString(), playerObject.get("uuid").getAsString());
                     });
                 }
             } catch (IOException e) {
@@ -213,6 +228,79 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
             }
             return ActionResult.PASS;
         });
+    }
+
+    public int checkChestInv(CommandContext<ServerCommandSource> context) {
+        String playerName = StringArgumentType.getString(context, "player");
+        String type = StringArgumentType.getString(context, "type");
+        ServerPlayerEntity playerEntity = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
+
+        if (playerEntity == null) { // player offline, take from disk data
+            if (playerNameAndUUIDs.containsKey(playerName) && type.equals("ENDERCHEST")) {
+                Path playerData = Paths.get(currentDir, "world", "playerdata", playerNameAndUUIDs.get(playerName) + ".dat");
+                File playerDataFile = new File(String.valueOf(playerData));
+                if (playerDataFile.exists()) {
+                    try (FileInputStream fis = new FileInputStream(playerDataFile)) {
+                        NbtCompound nbtCompound = NbtIo.readCompressed(fis);
+                        NbtList nbtList = nbtCompound.getList("EnderItems", 10);
+                        String feedBackText = "";
+
+                        for (int i = 0; i < nbtList.size(); i++) {
+                            NbtCompound itemCompound = nbtList.getCompound(i);
+                            String itemId = itemCompound.getString("id");
+                            int itemCount = itemCompound.getByte("Count");
+
+                            feedBackText = feedBackText + "item : '" + itemId.toUpperCase() + "' , amount : '"
+                                    + itemCount + "'\n";
+
+                            if (itemCompound.contains("tag")) {
+                                NbtCompound enchantmentsCompound = itemCompound.getCompound("tag");
+                                if (enchantmentsCompound.contains("Enchantments")) {
+                                    NbtList enchantmentsList = enchantmentsCompound.getList("Enchantments", 10);
+                                    String enchantmentsText = "[";
+
+                                    for (int v = 0; v < enchantmentsList.size(); v++) {
+                                        NbtCompound enchantmentCompound = enchantmentsList.getCompound(v);
+                                        String enchantmentId = enchantmentCompound.getString("id");
+                                        int enchantmentLevel = enchantmentCompound.getShort("lvl");
+
+                                        enchantmentsText = enchantmentsText + "{id:\"" + enchantmentId + "\",lvl:"
+                                                + enchantmentLevel + "s},";
+                                    }
+
+                                    enchantmentsText = enchantmentsText + "]\n";
+                                    feedBackText = feedBackText + enchantmentsText;
+                                }
+                            }
+                        }
+
+                        String finalFeedBackText = feedBackText; // idk why this is necessary...
+                        context.getSource().sendFeedback(() -> Text.of(finalFeedBackText), false);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        } else { // player online, take from memory
+            SimpleInventory enderChestInv = playerEntity.getEnderChestInventory();
+            String feedBackText = "";
+
+            for (int i = 0; i < enderChestInv.size(); i++) {
+                if (!enderChestInv.getStack(i).isEmpty()) {
+                    feedBackText = feedBackText + "item : '" + enderChestInv.getStack(i).getItem().toString().toUpperCase() + "' , amount : '"
+                            + enderChestInv.getStack(i).getCount() + "'\n";
+                    if (enderChestInv.getStack(i).hasEnchantments()) {
+                        String feedbackEnchants = enderChestInv.getStack(i).getEnchantments().toString();
+                        feedBackText = feedBackText + feedbackEnchants + "\n";
+                    }
+                }
+            }
+
+            String finalFeedBackText = feedBackText;
+            context.getSource().sendFeedback(() -> Text.of(finalFeedBackText), false);
+        }
+
+        return Command.SINGLE_SUCCESS;
     }
 
     public int setChestOwnerForce(CommandContext<ServerCommandSource> context) {

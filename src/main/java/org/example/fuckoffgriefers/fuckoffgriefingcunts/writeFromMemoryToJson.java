@@ -40,7 +40,7 @@ public class writeFromMemoryToJson {
             os = new FileOutputStream(String.valueOf(ownerMapPath));
             os.write(jsonString.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         } finally {
             try {
                 os.close();

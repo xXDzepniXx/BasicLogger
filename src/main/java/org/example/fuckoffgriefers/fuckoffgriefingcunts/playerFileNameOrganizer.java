@@ -16,7 +16,7 @@ public class playerFileNameOrganizer {
             try {
                 Files.writeString(filePath, textToAppend, StandardOpenOption.APPEND);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         } else {
             try {
@@ -24,7 +24,7 @@ public class playerFileNameOrganizer {
                 Files.createFile(filePath);
                 Files.writeString(filePath, textToAppend, StandardOpenOption.APPEND);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
         }
     }
