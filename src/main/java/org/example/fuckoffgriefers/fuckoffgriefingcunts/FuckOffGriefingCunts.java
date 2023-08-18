@@ -4,6 +4,7 @@ import com.google.gson.*;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.serialization.Decoder;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -15,6 +16,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.command.CommandSource;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
@@ -40,7 +42,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonObject;
@@ -89,7 +93,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                     .then(CommandManager.argument("player", StringArgumentType.string())
                             .suggests((context, builder) -> CommandSource.suggestMatching(playerNameAndUUIDs.keySet(), builder)) // Suggests online player names
                             .then(CommandManager.argument("type", StringArgumentType.string())
-                                    .suggests((context, builder) -> CommandSource.suggestMatching("ENDERCHEST".lines(), builder))
+                                    .suggests((context, builder) -> CommandSource.suggestMatching(List.of("ENDERINV", "PLAYERINV"), builder))
                                     .executes(this::checkChestInv))));
         });
 
@@ -236,7 +240,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
         ServerPlayerEntity playerEntity = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
 
         if (playerEntity == null) { // player offline, take from disk data
-            if (playerNameAndUUIDs.containsKey(playerName) && type.equals("ENDERCHEST")) {
+            if (playerNameAndUUIDs.containsKey(playerName) && type.equals("ENDERINV")) {
                 Path playerData = Paths.get(currentDir, "world", "playerdata", playerNameAndUUIDs.get(playerName) + ".dat");
                 File playerDataFile = new File(String.valueOf(playerData));
                 if (playerDataFile.exists()) {
@@ -281,7 +285,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                     }
                 }
             }
-        } else { // player online, take from memory
+        } else if (type.equals("ENDERINV")) { // player online, take from memory
             SimpleInventory enderChestInv = playerEntity.getEnderChestInventory();
             String feedBackText = "";
 
@@ -291,6 +295,23 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                             + enderChestInv.getStack(i).getCount() + "'\n";
                     if (enderChestInv.getStack(i).hasEnchantments()) {
                         String feedbackEnchants = enderChestInv.getStack(i).getEnchantments().toString();
+                        feedBackText = feedBackText + feedbackEnchants + "\n";
+                    }
+                }
+            }
+
+            String finalFeedBackText = feedBackText;
+            context.getSource().sendFeedback(() -> Text.of(finalFeedBackText), false);
+        } else if (type.equals("PLAYERINV")) { // if player online and want to check their inv instead
+            PlayerInventory playerInv = playerEntity.getInventory();
+            String feedBackText = "";
+
+            for (int i = 0; i < playerInv.size(); i++) {
+                if (!playerInv.getStack(i).isEmpty()) {
+                    feedBackText = feedBackText + "item : '" + playerInv.getStack(i).getItem().toString().toUpperCase() + "' , amount : '"
+                            + playerInv.getStack(i).getCount() + "'\n";
+                    if (playerInv.getStack(i).hasEnchantments()) {
+                        String feedbackEnchants = playerInv.getStack(i).getEnchantments().toString();
                         feedBackText = feedBackText + feedbackEnchants + "\n";
                     }
                 }
