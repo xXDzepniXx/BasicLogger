@@ -4,7 +4,6 @@ import com.google.gson.*;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.serialization.Decoder;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -42,7 +41,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -279,6 +277,50 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                         }
 
                         String finalFeedBackText = feedBackText; // idk why this is necessary...
+                        context.getSource().sendFeedback(() -> Text.of(finalFeedBackText), false);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } else if (playerNameAndUUIDs.containsKey(playerName) && type.equals("PLAYERINV")) {
+                Path playerData = Paths.get(currentDir, "world", "playerdata", playerNameAndUUIDs.get(playerName) + ".dat");
+                File playerDataFile = new File(String.valueOf(playerData));
+                if (playerDataFile.exists()) {
+                    try (FileInputStream fis = new FileInputStream(playerDataFile)) {
+                        NbtCompound nbtCompound = NbtIo.readCompressed(fis);
+                        NbtList nbtList = nbtCompound.getList("Inventory", 10);
+                        String feedBackText = "";
+
+                        for (int i = 0; i < nbtList.size(); i++) {
+                            NbtCompound itemCompound = nbtList.getCompound(i);
+                            String itemId = itemCompound.getString("id");
+                            int itemCount = itemCompound.getByte("Count");
+
+                            feedBackText = feedBackText + "item : '" + itemId.toUpperCase() + "' , amount : '"
+                                    + itemCount + "'\n";
+
+                            if (itemCompound.contains("tag")) {
+                                NbtCompound enchantmentsCompound = itemCompound.getCompound("tag");
+                                if (enchantmentsCompound.contains("Enchantments")) {
+                                    NbtList enchantmentsList = enchantmentsCompound.getList("Enchantments", 10);
+                                    String enchantmentsText = "[";
+
+                                    for (int v = 0; v < enchantmentsList.size(); v++) {
+                                        NbtCompound enchantmentCompound = enchantmentsList.getCompound(v);
+                                        String enchantmentId = enchantmentCompound.getString("id");
+                                        int enchantmentLevel = enchantmentCompound.getShort("lvl");
+
+                                        enchantmentsText = enchantmentsText + "{id:\"" + enchantmentId + "\",lvl:"
+                                                + enchantmentLevel + "s},";
+                                    }
+
+                                    enchantmentsText = enchantmentsText + "]\n";
+                                    feedBackText = feedBackText + enchantmentsText;
+                                }
+                            }
+                        }
+
+                        String finalFeedBackText = feedBackText;
                         context.getSource().sendFeedback(() -> Text.of(finalFeedBackText), false);
                     } catch (IOException e) {
                         e.printStackTrace();
