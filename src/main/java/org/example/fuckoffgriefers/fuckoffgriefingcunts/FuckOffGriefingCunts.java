@@ -56,7 +56,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
     // ownerMap is stuck in memory as long as the server is on, but will lose all data upon a restart
     // BlockEntity is unique with each entry
     public static final jsonHashMap jsonOwnerMap = new jsonHashMap();
-    public static final HashMap<String, String> playerNameAndUUIDs = new HashMap<>(10);
+    public static final HashMap<String, String> playerNameAndUUIDs = new HashMap<>(20);
     public static final String currentDir = System.getProperty("user.dir");
     public static final Path path = Paths.get(currentDir, "GriefingCuntsLogs");
     public static final Path ownerMapPath = Paths.get(currentDir, "GriefingCuntsLogs", "GriefingCuntsOwnerMaps.json");
@@ -190,22 +190,26 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                     !player.getMainHandStack().isEmpty() &&
                     playerItemInHand == Blocks.HOPPER.asItem()) {
 
-                BlockPos hopperPos = hitResult.getBlockPos();
-                BlockPos chestPos = hopperPos.up().up();
-                BlockEntity blockEntityAbove = world.getBlockEntity(chestPos);
-                BlockState blockStateAbove = world.getBlockState(chestPos);
+                if (hitResult.getType() == HitResult.Type.BLOCK) {
+                    Direction side = hitResult.getSide();
+                    BlockPos targetBlockPos = hitResult.getBlockPos();
+                    BlockPos placePosition = targetBlockPos.offset(side);
+                    BlockPos possibleChestPos = placePosition.up();
+                    BlockEntity blockEntityAbove = world.getBlockEntity(possibleChestPos);
+                    BlockState blockStateAbove = world.getBlockState(possibleChestPos);
 
-                if (blockEntityAbove instanceof ChestBlockEntity || blockEntityAbove instanceof BarrelBlockEntity) {
-                    if (jsonOwnerMap.ownerMap.containsKey(blockEntityAbove)) {
-                        if (!jsonOwnerMap.ownerMap.get(blockEntityAbove).equals(player.getEntityName())) {
-                            LocalDateTime currentTime = LocalDateTime.now();
-                            DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                            String formattedTime = currentTime.format(timeFormatter);
-                            String blockType = blockStateAbove.getBlock().asItem().toString().toUpperCase();
-                            String stringToAppend = player.getEntityName() + " placed " +
-                                    playerItemInHand.toString().toUpperCase() + " BELOW " +
-                                    jsonOwnerMap.ownerMap.get(blockEntityAbove) + "'s " + blockType + " at " + blockEntityAbove.getPos() + " " + formattedTime + "\n";
-                            new playerFileNameOrganizer(player.getEntityName(), stringToAppend);
+                    if (blockEntityAbove instanceof ChestBlockEntity || blockEntityAbove instanceof BarrelBlockEntity) {
+                        if (jsonOwnerMap.ownerMap.containsKey(blockEntityAbove)) {
+                            if (!jsonOwnerMap.ownerMap.get(blockEntityAbove).equals(player.getEntityName())) {
+                                LocalDateTime currentTime = LocalDateTime.now();
+                                DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                                String formattedTime = currentTime.format(timeFormatter);
+                                String blockType = blockStateAbove.getBlock().asItem().toString().toUpperCase();
+                                String stringToAppend = player.getEntityName() + " placed " +
+                                        playerItemInHand.toString().toUpperCase() + " BELOW " +
+                                        jsonOwnerMap.ownerMap.get(blockEntityAbove) + "'s " + blockType + " at " + blockEntityAbove.getPos() + " " + formattedTime + "\n";
+                                new playerFileNameOrganizer(player.getEntityName(), stringToAppend);
+                            }
                         }
                     }
                 }
@@ -368,6 +372,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
 
     public int setChestOwnerForce(CommandContext<ServerCommandSource> context) {
         String commandInput = StringArgumentType.getString(context, "players");
+        boolean doneSomething = false;
 
         ServerPlayerEntity player = context.getSource().getPlayer();
         if (player != null) { // in case someone runs it from console for some reason
@@ -388,6 +393,7 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                     Direction chestFacing = halfBlockState.get(ChestBlock.FACING);
                     Direction directionOfOtherHalf;
                     jsonOwnerMap.setOwner(blockEntity, commandInput);
+                    doneSomething = true;
 
                     if (chestType == ChestType.LEFT) {
                         directionOfOtherHalf = chestFacing.rotateYClockwise();
@@ -404,12 +410,15 @@ public class FuckOffGriefingCunts implements ModInitializer { // To make sure mo
                     }
                 } else if (block instanceof BarrelBlock && blockEntity instanceof BarrelBlockEntity) {
                     jsonOwnerMap.setOwner(blockEntity, commandInput);
+                    doneSomething = true;
                 }
             }
         }
 
-        new writeFromMemoryToJson(jsonOwnerMap, ownerMapPath);
-        System.out.println("Successfully changed chest owner to " + commandInput);
+        if (doneSomething) {
+            new writeFromMemoryToJson(jsonOwnerMap, ownerMapPath);
+            context.getSource().sendFeedback(() -> Text.of("Successfully changed chest owner to " + commandInput), false);
+        }
 
         return Command.SINGLE_SUCCESS;
     }
